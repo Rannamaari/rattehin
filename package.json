@@ -1,0 +1,14 @@
+{
+  "name": "rattehin",
+  "version": "1.0.0",
+  "description": "Rattehin — friends & family restaurant bill splitter for the Maldives",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "NODE_ENV=development node server.js"
+  },
+  "dependencies": {
+    "express": "^4.19.2",
+    "compression": "^1.7.4"
+  }
+}

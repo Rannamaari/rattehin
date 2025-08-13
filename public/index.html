@@ -1,0 +1,403 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no" />
+    <meta name="theme-color" content="#2563eb" />
+    <meta name="description" content="Split restaurant bills easily in the Maldives with GST and service charges" />
+    <link rel="manifest" href="./manifest.json" />
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E🧾%3C/text%3E%3C/svg%3E">
+    <title>Rattehin — Maldives Bill Splitter</title>
+    <!-- Tailwind CDN with JIT mode -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+      tailwind.config = {
+        darkMode: 'class',
+        theme: {
+          extend: {
+            colors: {
+              primary: { 
+                DEFAULT: "#2563eb", 
+                50: "#eff6ff", 
+                100: "#dbeafe", 
+                500: "#3b82f6",
+                600: "#2563eb", 
+                700: "#1d4ed8",
+                900: "#1e3a8a"
+              },
+              accent: { DEFAULT: "#ef4444", 50: "#fef2f2" },
+              ok: { DEFAULT: "#16a34a", 50: "#f0fdf4" },
+              maldives: {
+                blue: "#00a8cc",
+                green: "#228b22",
+                red: "#dc143c"
+              }
+            },
+            animation: {
+              'fade-in': 'fadeIn 0.5s ease-in-out',
+              'slide-up': 'slideUp 0.3s ease-out',
+              'bounce-gentle': 'bounceGentle 0.6s ease-in-out',
+              'pulse-slow': 'pulse 3s infinite'
+            },
+            keyframes: {
+              fadeIn: {
+                '0%': { opacity: '0', transform: 'translateY(10px)' },
+                '100%': { opacity: '1', transform: 'translateY(0)' }
+              },
+              slideUp: {
+                '0%': { opacity: '0', transform: 'translateY(20px)' },
+                '100%': { opacity: '1', transform: 'translateY(0)' }
+              },
+              bounceGentle: {
+                '0%, 20%, 50%, 80%, 100%': { transform: 'translateY(0)' },
+                '40%': { transform: 'translateY(-4px)' },
+                '60%': { transform: 'translateY(-2px)' }
+              }
+            },
+            fontFamily: {
+              'sans': ['-apple-system', 'BlinkMacSystemFont', 'Segoe UI', 'Roboto', 'sans-serif']
+            },
+            boxShadow: {
+              'soft': '0 2px 15px -3px rgba(0, 0, 0, 0.07), 0 10px 20px -2px rgba(0, 0, 0, 0.04)',
+              'lift': '0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)'
+            }
+          }
+        }
+      };
+    </script>
+    <style>
+      .glass {
+        backdrop-filter: blur(16px) saturate(180%);
+        background-color: rgba(255, 255, 255, 0.75);
+        border: 1px solid rgba(209, 213, 219, 0.3);
+      }
+      .dark .glass {
+        background-color: rgba(17, 24, 39, 0.75);
+        border: 1px solid rgba(75, 85, 99, 0.3);
+      }
+      @media (max-width: 768px) {
+        .touch-action-manipulation {
+          touch-action: manipulation;
+        }
+      }
+      .gradient-bg {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      }
+      .toast {
+        position: fixed;
+        top: 1rem;
+        right: 1rem;
+        z-index: 1000;
+        transform: translateX(100%);
+        transition: transform 0.3s ease-in-out;
+      }
+      .toast.show {
+        transform: translateX(0);
+      }
+      .bill-animation {
+        background: linear-gradient(45deg, #f0f9ff, #e0f2fe, #f0f9ff);
+        background-size: 200% 200%;
+        animation: shimmer 3s ease-in-out infinite;
+      }
+      @keyframes shimmer {
+        0%, 100% { background-position: 0% 0%; }
+        50% { background-position: 100% 100%; }
+      }
+      .floating-action {
+        position: fixed;
+        bottom: 2rem;
+        right: 2rem;
+        z-index: 100;
+      }
+      @media (max-width: 640px) {
+        .floating-action {
+          bottom: 1rem;
+          right: 1rem;
+        }
+      }
+    </style>
+  </head>
+  <body class="bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50 dark:from-gray-900 dark:via-blue-900 dark:to-indigo-900 text-gray-900 dark:text-white transition-colors duration-300 min-h-screen">
+    <!-- Dark Mode Toggle -->
+    <button id="darkModeToggle" class="fixed top-4 right-4 z-50 p-3 rounded-full bg-white dark:bg-gray-800 shadow-lg border dark:border-gray-700 hover:shadow-xl transition-all duration-300 group" aria-label="Toggle dark mode">
+      <svg class="w-5 h-5 text-yellow-500 dark:hidden" fill="currentColor" viewBox="0 0 20 20">
+        <path fill-rule="evenodd" d="M10 2a1 1 0 011 1v1a1 1 0 11-2 0V3a1 1 0 011-1zm4 8a4 4 0 11-8 0 4 4 0 018 0zm-.464 4.95l.707.707a1 1 0 001.414-1.414l-.707-.707a1 1 0 00-1.414 1.414zm2.12-10.607a1 1 0 010 1.414l-.706.707a1 1 0 11-1.414-1.414l.707-.707a1 1 0 011.414 0zM17 11a1 1 0 100-2h-1a1 1 0 100 2h1zm-7 4a1 1 0 011 1v1a1 1 0 11-2 0v-1a1 1 0 011-1zM5.05 6.464A1 1 0 106.465 5.05l-.708-.707a1 1 0 00-1.414 1.414l.707.707zm1.414 8.486l-.707.707a1 1 0 01-1.414-1.414l.707-.707a1 1 0 011.414 1.414zM4 11a1 1 0 100-2H3a1 1 0 000 2h1z" clip-rule="evenodd"></path>
+      </svg>
+      <svg class="w-5 h-5 text-blue-400 hidden dark:block" fill="currentColor" viewBox="0 0 20 20">
+        <path d="M17.293 13.293A8 8 0 016.707 2.707a8.001 8.001 0 1010.586 10.586z"></path>
+      </svg>
+    </button>
+
+    <header class="gradient-bg text-white relative overflow-hidden">
+      <div class="absolute inset-0 bg-black opacity-10"></div>
+      <div class="max-w-5xl mx-auto px-4 sm:px-6 py-6 sm:py-8 flex items-center justify-between relative z-10">
+        <div class="flex items-center space-x-3">
+          <div class="text-3xl sm:text-4xl">🧾</div>
+          <div>
+            <h1 class="text-2xl sm:text-3xl font-bold tracking-wide">Rattehin</h1>
+            <p class="text-sm sm:text-base opacity-90 mt-1">Smart bill splitter for the Maldives</p>
+          </div>
+        </div>
+        <div class="hidden sm:flex items-center space-x-2 text-sm opacity-80">
+          <span class="bg-white bg-opacity-20 px-3 py-1 rounded-full">🇲🇻 MVR</span>
+          <span class="bg-white bg-opacity-20 px-3 py-1 rounded-full">GST Ready</span>
+        </div>
+      </div>
+    </header>
+
+    <!-- Toast Notification -->
+    <div id="toast" class="toast">
+      <div class="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-lg p-4 max-w-sm">
+        <div class="flex items-center space-x-3">
+          <div id="toastIcon" class="flex-shrink-0">
+            <!-- Icon will be inserted here -->
+          </div>
+          <div>
+            <p id="toastMessage" class="text-sm font-medium text-gray-900 dark:text-white"></p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <main class="max-w-5xl mx-auto px-4 sm:px-6 py-6 sm:py-8 space-y-6 sm:space-y-8">
+      <!-- Party / Tax Settings -->
+      <section class="glass rounded-2xl shadow-soft hover:shadow-lift transition-all duration-300 p-4 sm:p-6 animate-fade-in">
+        <div class="flex items-center space-x-3 mb-6">
+          <div class="w-10 h-10 rounded-full bg-primary-500 bg-opacity-10 flex items-center justify-center">
+            <span class="text-xl">👥</span>
+          </div>
+          <h2 class="text-xl font-bold text-gray-800 dark:text-white">Party & Charges</h2>
+        </div>
+        <div class="grid sm:grid-cols-1 lg:grid-cols-3 gap-6">
+          <div class="space-y-4">
+            <label class="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">People</label>
+            <div class="flex gap-2">
+              <input
+                id="personName"
+                type="text"
+                placeholder="Enter name..."
+                class="flex-1 border-2 border-gray-200 dark:border-gray-600 rounded-xl px-4 py-3 bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:border-primary-500 focus:ring-2 focus:ring-primary-200 dark:focus:ring-primary-800 transition-all duration-300 text-base touch-action-manipulation"
+              />
+              <button
+                id="addPersonBtn"
+                class="px-4 sm:px-6 py-3 rounded-xl bg-gradient-to-r from-ok to-green-500 text-white font-medium hover:shadow-lg active:scale-95 transition-all duration-300 touch-action-manipulation min-w-[80px]"
+              >
+                <span class="hidden sm:inline">Add</span>
+                <span class="sm:hidden text-xl">+</span>
+              </button>
+            </div>
+            <div id="peopleList" class="flex flex-wrap gap-2"></div>
+          </div>
+
+          <div class="space-y-4">
+            <label class="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">Service Charge (%)</label>
+            <div class="relative">
+              <input
+                id="servicePct"
+                type="number"
+                min="0"
+                max="30"
+                step="0.5"
+                value="10"
+                class="w-full border-2 border-gray-200 dark:border-gray-600 rounded-xl px-4 py-3 bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:border-primary-500 focus:ring-2 focus:ring-primary-200 dark:focus:ring-primary-800 transition-all duration-300 text-base touch-action-manipulation"
+              />
+              <div class="absolute right-3 top-3 text-gray-400 dark:text-gray-500 pointer-events-none">%</div>
+            </div>
+            <div class="flex gap-2 flex-wrap">
+              <button type="button" class="tip-preset px-3 py-1 rounded-full bg-gray-100 dark:bg-gray-700 text-xs font-medium hover:bg-primary-100 dark:hover:bg-primary-900 transition-colors" data-value="0">0%</button>
+              <button type="button" class="tip-preset px-3 py-1 rounded-full bg-gray-100 dark:bg-gray-700 text-xs font-medium hover:bg-primary-100 dark:hover:bg-primary-900 transition-colors" data-value="5">5%</button>
+              <button type="button" class="tip-preset px-3 py-1 rounded-full bg-gray-100 dark:bg-gray-700 text-xs font-medium hover:bg-primary-100 dark:hover:bg-primary-900 transition-colors" data-value="10">10%</button>
+              <button type="button" class="tip-preset px-3 py-1 rounded-full bg-gray-100 dark:bg-gray-700 text-xs font-medium hover:bg-primary-100 dark:hover:bg-primary-900 transition-colors" data-value="15">15%</button>
+            </div>
+            <p class="text-xs text-gray-500 dark:text-gray-400">
+              Common service charge in Maldives restaurants
+            </p>
+          </div>
+
+          <div class="space-y-4">
+            <label class="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">Tax Settings</label>
+            <div class="space-y-3">
+              <label class="flex items-center justify-between p-3 rounded-xl border border-gray-200 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors cursor-pointer">
+                <div class="flex items-center space-x-3">
+                  <span class="text-sm font-medium text-gray-700 dark:text-gray-300">Apply T-GST (8%)</span>
+                  <span class="text-xs px-2 py-1 rounded-full bg-maldives-blue text-white">🇲🇻</span>
+                </div>
+                <input
+                  id="gstEnabled"
+                  type="checkbox"
+                  class="w-5 h-5 text-primary-600 bg-gray-100 border-gray-300 rounded focus:ring-primary-500 dark:focus:ring-primary-600 dark:ring-offset-gray-800 focus:ring-2 dark:bg-gray-700 dark:border-gray-600 transition-all"
+                  checked
+                />
+              </label>
+              <label class="flex items-center justify-between p-3 rounded-xl border border-gray-200 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors cursor-pointer">
+                <span class="text-sm font-medium text-gray-700 dark:text-gray-300">GST on (subtotal + service)</span>
+                <input
+                  id="gstOnService"
+                  type="checkbox"
+                  class="w-5 h-5 text-primary-600 bg-gray-100 border-gray-300 rounded focus:ring-primary-500 dark:focus:ring-primary-600 dark:ring-offset-gray-800 focus:ring-2 dark:bg-gray-700 dark:border-gray-600 transition-all"
+                  checked
+                />
+              </label>
+            </div>
+            <div class="bg-blue-50 dark:bg-blue-900 border border-blue-200 dark:border-blue-700 rounded-xl p-3">
+              <p class="text-xs text-blue-700 dark:text-blue-300 flex items-center space-x-2">
+                <span>ℹ️</span>
+                <span>Standard: 10% service + 8% GST on total</span>
+              </p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Shared Items -->
+      <section class="bg-white rounded-xl shadow p-4 md:p-6 mb-6">
+        <h2 class="text-lg font-semibold mb-4">
+          Shared Items (e.g., Water, Paan)
+        </h2>
+        <div class="flex gap-2 mb-3">
+          <input
+            id="sharedName"
+            type="text"
+            placeholder="Water / Paan / Arecanuts ..."
+            class="flex-1 border rounded px-3 py-2"
+          />
+          <input
+            id="sharedPrice"
+            type="number"
+            min="0"
+            step="0.01"
+            placeholder="0.00"
+            class="w-36 border rounded px-3 py-2"
+          />
+          <button
+            id="addSharedBtn"
+            class="px-3 py-2 rounded bg-primary text-white hover:opacity-90"
+          >
+            Add
+          </button>
+        </div>
+        <div id="sharedList" class="space-y-2"></div>
+      </section>
+
+      <!-- Individual Items -->
+      <section class="bg-white rounded-xl shadow p-4 md:p-6 mb-6">
+        <h2 class="text-lg font-semibold mb-4">Items (assign to who ate)</h2>
+        <div class="flex gap-2 mb-3">
+          <input
+            id="itemName"
+            type="text"
+            placeholder="Fried Rice / Burger ..."
+            class="flex-1 border rounded px-3 py-2"
+          />
+          <input
+            id="itemPrice"
+            type="number"
+            min="0"
+            step="0.01"
+            placeholder="0.00"
+            class="w-36 border rounded px-3 py-2"
+          />
+          <button
+            id="addItemBtn"
+            class="px-3 py-2 rounded bg-accent text-white hover:opacity-90"
+          >
+            Add
+          </button>
+        </div>
+        <div id="itemList" class="space-y-4"></div>
+      </section>
+
+      <!-- Mode -->
+      <section class="bg-white rounded-xl shadow p-4 md:p-6 mb-6">
+        <h2 class="text-lg font-semibold mb-4">Split Mode</h2>
+        <label class="inline-flex items-center gap-2 mr-6">
+          <input
+            type="radio"
+            name="mode"
+            value="itemized"
+            class="w-4 h-4"
+            checked
+          />
+          <span>Itemized (by who ate)</span>
+        </label>
+        <label class="inline-flex items-center gap-2">
+          <input type="radio" name="mode" value="equal" class="w-4 h-4" />
+          <span>Equal split (everything)</span>
+        </label>
+      </section>
+
+      <!-- Actions -->
+      <div class="flex flex-wrap items-center gap-3 mb-6">
+        <button
+          id="calcBtn"
+          class="px-4 py-2 rounded bg-ok text-white hover:opacity-90"
+        >
+          Calculate
+        </button>
+        <button
+          id="resetBtn"
+          class="px-4 py-2 rounded bg-gray-200 hover:bg-gray-300"
+        >
+          Reset
+        </button>
+        <button
+          id="shareBtn"
+          class="px-4 py-2 rounded bg-primary text-white hover:opacity-90"
+        >
+          Share link
+        </button>
+        <span id="shareStatus" class="text-sm text-gray-600"></span>
+      </div>
+
+      <!-- Results -->
+      <section id="results" class="grid sm:grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-4 animate-fade-in"></section>
+
+      <!-- Grand Totals -->
+      <section id="grandTotals" class="animate-fade-in"></section>
+
+      <!-- Bill History -->
+      <section id="historySection" class="hidden glass rounded-2xl shadow-soft p-4 sm:p-6 animate-fade-in">
+        <div class="flex items-center justify-between mb-4">
+          <div class="flex items-center space-x-3">
+            <div class="w-10 h-10 rounded-full bg-indigo-500 bg-opacity-10 flex items-center justify-center">
+              <span class="text-xl">📋</span>
+            </div>
+            <h2 class="text-xl font-bold text-gray-800 dark:text-white">Bill History</h2>
+          </div>
+          <button id="clearHistoryBtn" class="text-sm text-red-500 hover:text-red-600 font-medium">
+            Clear All
+          </button>
+        </div>
+        <div id="historyList" class="space-y-3">
+          <p class="text-gray-500 dark:text-gray-400 text-center py-8">No saved bills yet</p>
+        </div>
+      </section>
+
+      <!-- Floating Action Button -->
+      <div class="floating-action">
+        <button id="printBtn" class="w-14 h-14 rounded-full bg-gradient-to-r from-indigo-500 to-purple-600 text-white shadow-lg hover:shadow-xl active:scale-95 transition-all duration-300 flex items-center justify-center">
+          <span class="text-xl">📎</span>
+        </button>
+      </div>
+    </main>
+
+    <footer class="py-8 text-center">
+      <div class="max-w-5xl mx-auto px-4">
+        <div class="glass rounded-2xl p-6 mb-4">
+          <p class="text-sm text-gray-600 dark:text-gray-400 mb-2">
+            Built with ❤️ for friends & family in the Maldives
+          </p>
+          <div class="flex justify-center space-x-4 text-xs text-gray-500 dark:text-gray-500">
+            <span>🇲🇻 MVR Currency</span>
+            <span>•</span>
+            <span>8% T-GST Ready</span>
+            <span>•</span>
+            <span>Service Charges</span>
+          </div>
+        </div>
+      </div>
+    </footer>
+
+    <script src="./app.js"></script>
+  </body>
+</html>

@@ -127,7 +127,7 @@
   function renderShared() {
     sharedListEl.innerHTML = '';
     if (shared.length === 0) {
-      sharedListEl.innerHTML = '<p class="text-sm text-gray-500">No shared items yet.</p>';
+      sharedListEl.innerHTML = '<div class="text-center py-8"><div class="text-4xl mb-2">🍽️</div><p class="text-sm text-gray-500 dark:text-gray-400">No shared items yet</p><p class="text-xs text-gray-400 dark:text-gray-500 mt-1">Add items that everyone will share</p></div>';
       return;
     }
     shared.forEach((s) => {
@@ -136,7 +136,7 @@
       row.innerHTML = `
         <div class="font-medium">${s.name}</div>
         <div class="flex items-center gap-4">
-          <div class="text-gray-700">${currency(s.price)}</div>
+          <div class="text-gray-700 dark:text-gray-300">${currency(s.price)}</div>
           <button class="text-accent font-semibold" data-id="${s.id}">Remove</button>
         </div>`;
       sharedListEl.appendChild(row);
@@ -146,7 +146,7 @@
   function renderItems() {
     itemListEl.innerHTML = '';
     if (items.length === 0) {
-      itemListEl.innerHTML = '<p class="text-sm text-gray-500">No items yet.</p>';
+      itemListEl.innerHTML = '<div class="text-center py-8"><div class="text-4xl mb-2">🍽️</div><p class="text-sm text-gray-500 dark:text-gray-400">No individual items yet</p><p class="text-xs text-gray-400 dark:text-gray-500 mt-1">Add items and assign them to specific people</p></div>';
       return;
     }
     items.forEach((it) => {
@@ -162,12 +162,12 @@
       }).join('');
       card.innerHTML = `
         <div class="flex items-center justify-between">
-          <div class="font-medium">${it.name} <span class="text-gray-500">(${currency(it.price)})</span></div>
+          <div class="font-medium">${it.name} <span class="text-gray-500 dark:text-gray-400">(${currency(it.price)})</span></div>
           <button class="text-accent font-semibold remove-item" data-id="${it.id}">Remove</button>
         </div>
         <div class="mt-2 text-sm">
-          <div class="mb-1 text-gray-600">Who ate this?</div>
-          <div>${checks || '<span class="text-gray-400">Add people first.</span>'}</div>
+          <div class="mb-1 text-gray-600 dark:text-gray-300">Who ate this?</div>
+          <div>${checks || '<span class="text-gray-400 dark:text-gray-500">Add people first.</span>'}</div>
         </div>`;
       itemListEl.appendChild(card);
     });
@@ -265,7 +265,7 @@
     const gstOnService = gstOnServiceEl.checked;
 
     if (people.length === 0) {
-      resultsEl.innerHTML = '<p class="text-sm text-gray-600">Add at least one person.</p>';
+      resultsEl.innerHTML = '<div class="glass rounded-xl p-8 text-center animate-fade-in"><div class="text-4xl mb-4">\ud83d\udc65</div><p class="text-gray-600 dark:text-gray-400">Add at least one person to calculate the split</p></div>';
       grandTotalsEl.innerHTML = '';
       return;
     }

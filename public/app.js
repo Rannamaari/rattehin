@@ -1031,13 +1031,17 @@
   // Initialize preset buttons
   function initPresetButtons() {
     // Shared item preset buttons
-    document.querySelectorAll('.shared-preset').forEach(btn => {
+    const sharedButtons = document.querySelectorAll('.shared-preset');
+    console.log('Found shared preset buttons:', sharedButtons.length);
+    sharedButtons.forEach(btn => {
       btn.addEventListener('click', (e) => {
         e.preventDefault();
+        console.log('Shared preset clicked:', btn.dataset.name);
         const name = btn.dataset.name;
         const price = parseFloat(btn.dataset.price);
         
         if (name && price) {
+          console.log('Adding shared item:', name, price);
           // Add directly to shared items
           const newId = `shared_${Date.now()}_${Math.random().toString(36).slice(2, 11)}`;
           shared.push({ id: newId, name, price });
@@ -1053,18 +1057,22 @@
     });
     
     // Individual item preset buttons  
-    document.querySelectorAll('.item-preset').forEach(btn => {
+    const itemButtons = document.querySelectorAll('.item-preset');
+    console.log('Found item preset buttons:', itemButtons.length);
+    itemButtons.forEach(btn => {
       btn.addEventListener('click', (e) => {
         e.preventDefault();
+        console.log('Item preset clicked:', btn.dataset.name);
         const name = btn.dataset.name;
         const price = parseFloat(btn.dataset.price);
         
         if (name && price) {
+          console.log('Filling form with:', name, price);
           // Fill the form inputs
-          itemNameInput.value = name;
-          itemPriceInput.value = price;
+          itemNameEl.value = name;
+          itemPriceEl.value = price;
           // Focus on the form so user can see it's filled
-          itemNameInput.focus();
+          itemNameEl.focus();
           showToast(`${name} ready to add - assign to someone!`, 'info');
           
           // Add animation feedback

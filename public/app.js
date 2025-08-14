@@ -484,9 +484,13 @@
       
       // Update progress UI
       ocrProgressBar.style.width = '20%';
-      ocrStatus.textContent = 'Converting image...';
+      if (imageFile.size > 2 * 1024 * 1024) {
+        ocrStatus.textContent = 'Compressing large image...';
+      } else {
+        ocrStatus.textContent = 'Converting image...';
+      }
       
-      // Convert image to base64
+      // Convert image to base64 (with compression if needed)
       const base64Image = await fileToBase64(imageFile);
       
       ocrProgressBar.style.width = '40%';
@@ -506,7 +510,33 @@
       ocrProgressBar.style.width = '80%';
       ocrStatus.textContent = 'Parsing bill items...';
       
-      const result = await response.json();
+      // Enhanced response handling with better error messages
+      if (!response.ok) {
+        let errorMessage = `OCR service error (${response.status})`;
+        
+        try {
+          const errorResult = await response.json();
+          errorMessage = errorResult.error || errorResult.details || errorMessage;
+        } catch (jsonError) {
+          // If response is not JSON, it might be an HTML error page
+          const textResponse = await response.text();
+          if (textResponse.includes('<html') || textResponse.includes('<!DOCTYPE')) {
+            errorMessage = 'OCR service temporarily unavailable. Please try again in a moment.';
+          } else {
+            errorMessage = 'Unable to connect to OCR service. Please check your internet connection.';
+          }
+        }
+        
+        throw new Error(errorMessage);
+      }
+      
+      let result;
+      try {
+        result = await response.json();
+      } catch (jsonError) {
+        console.error('Failed to parse OCR response as JSON:', jsonError);
+        throw new Error('Invalid response from server. Please try again.');
+      }
       
       if (!result.success) {
         throw new Error(result.error || 'OCR processing failed');
@@ -542,13 +572,76 @@
     }
   }
   
-  // Helper function to convert file to base64
+  // Helper function to convert file to base64 with compression
   function fileToBase64(file) {
     return new Promise((resolve, reject) => {
-      const reader = new FileReader();
-      reader.readAsDataURL(file);
-      reader.onload = () => resolve(reader.result);
-      reader.onerror = error => reject(error);
+      // Check file size - if > 2MB, compress it
+      const maxSize = 2 * 1024 * 1024; // 2MB
+      
+      if (file.size <= maxSize) {
+        // Small file, no compression needed
+        const reader = new FileReader();
+        reader.readAsDataURL(file);
+        reader.onload = () => resolve(reader.result);
+        reader.onerror = error => reject(error);
+      } else {
+        // Large file, compress it
+        compressImage(file, maxSize)
+          .then(resolve)
+          .catch(reject);
+      }
+    });
+  }
+  
+  // Image compression function for mobile photos
+  function compressImage(file, maxSize) {
+    return new Promise((resolve, reject) => {
+      const canvas = document.createElement('canvas');
+      const ctx = canvas.getContext('2d');
+      const img = new Image();
+      
+      img.onload = function() {
+        // Calculate new dimensions maintaining aspect ratio
+        let { width, height } = img;
+        const maxDimension = 1920; // Max width/height
+        
+        if (width > maxDimension || height > maxDimension) {
+          if (width > height) {
+            height = (height * maxDimension) / width;
+            width = maxDimension;
+          } else {
+            width = (width * maxDimension) / height;
+            height = maxDimension;
+          }
+        }
+        
+        canvas.width = width;
+        canvas.height = height;
+        
+        // Draw and compress
+        ctx.drawImage(img, 0, 0, width, height);
+        
+        // Start with 0.8 quality and reduce until we get under maxSize
+        let quality = 0.8;
+        
+        const tryCompress = () => {
+          const dataUrl = canvas.toDataURL('image/jpeg', quality);
+          const sizeBytes = Math.round((dataUrl.length - 'data:image/jpeg;base64,'.length) * 3/4);
+          
+          if (sizeBytes <= maxSize || quality <= 0.1) {
+            console.log(`Compressed image: ${(file.size/1024/1024).toFixed(1)}MB → ${(sizeBytes/1024/1024).toFixed(1)}MB (${Math.round(quality*100)}% quality)`);
+            resolve(dataUrl);
+          } else {
+            quality -= 0.1;
+            setTimeout(tryCompress, 10); // Small delay to prevent blocking
+          }
+        };
+        
+        tryCompress();
+      };
+      
+      img.onerror = () => reject(new Error('Failed to load image for compression'));
+      img.src = URL.createObjectURL(file);
     });
   }
 
@@ -916,6 +1009,7 @@
     renderItems();
     renderShared();
     renderHistory();
+    updateCopyrightYear();
     
     // Register service worker for PWA
     if ('serviceWorker' in navigator) {
@@ -930,6 +1024,14 @@
         showToast('Welcome to Rattehin! Split bills easily with friends & family 🎉', 'info', 5000);
         localStorage.setItem('rattehin_visited', 'true');
       }, 1000);
+    }
+  }
+  
+  // Update copyright year dynamically
+  function updateCopyrightYear() {
+    const currentYearEl = $$('#currentYear');
+    if (currentYearEl) {
+      currentYearEl.textContent = new Date().getFullYear();
     }
   }
   

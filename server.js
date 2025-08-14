@@ -1,3 +1,4 @@
+require('dotenv').config();
 const express = require('express');
 const compression = require('compression');
 const path = require('path');
@@ -106,25 +107,85 @@ app.post('/api/ocr', async (req, res) => {
       return res.status(400).json({ error: 'No image data provided' });
     }
     
+    // Validate image data format
+    if (!imageData.startsWith('data:image/')) {
+      return res.status(400).json({ error: 'Invalid image format. Please upload a valid image.' });
+    }
+    
+    // Check image size (base64 encoded size)
+    const imageSizeMB = (imageData.length * 3/4) / (1024 * 1024); // Approximate decoded size
+    console.log(`Image size: ${imageSizeMB.toFixed(1)}MB`);
+    
+    if (imageSizeMB > 10) {
+      return res.status(413).json({ 
+        error: 'Image too large. Please compress or resize your image to under 10MB.',
+        details: `Current size: ${imageSizeMB.toFixed(1)}MB`
+      });
+    }
+    
     console.log('Calling OCR.Space API...');
     
-    // OCR.Space API call with your key
-    const ocrResult = await ocrSpace(imageData, {
-      apiKey: 'K82908052588957',
-      ocrEngine: 2, // Better for structured documents
-      isTable: true, // Optimized for receipts/tables
-      language: 'eng',
-      scale: true, // Auto-scale for better OCR
-      detectOrientation: true // Auto-detect text orientation
-    });
+    // OCR.Space API call with environment variable and enhanced error handling
+    let ocrResult;
+    try {
+      ocrResult = await ocrSpace(imageData, {
+        apiKey: process.env.OCR_SPACE_API_KEY,
+        ocrEngine: 2, // Better for structured documents
+        isTable: true, // Optimized for receipts/tables
+        language: 'eng',
+        scale: true, // Auto-scale for better OCR
+        detectOrientation: true // Auto-detect text orientation
+      });
+    } catch (apiError) {
+      console.error('OCR.Space API Error:', apiError);
+      
+      // Handle cases where the API returns HTML instead of JSON
+      if (apiError.message && apiError.message.includes('Unexpected token')) {
+        return res.status(429).json({ 
+          error: 'OCR service temporarily unavailable. Please try again in a moment.',
+          details: 'API rate limit or service error'
+        });
+      }
+      
+      return res.status(500).json({ 
+        error: 'OCR API communication failed', 
+        details: apiError.message 
+      });
+    }
     
-    console.log('OCR Result:', JSON.stringify(ocrResult, null, 2));
+    console.log('OCR Result type:', typeof ocrResult);
+    console.log('OCR Result keys:', Object.keys(ocrResult || {}));
     
-    if (ocrResult.IsErroredOnProcessing || !ocrResult.ParsedResults || ocrResult.ParsedResults.length === 0) {
-      throw new Error(ocrResult.ErrorMessage || 'OCR processing failed');
+    // Enhanced validation of OCR response
+    if (!ocrResult || typeof ocrResult !== 'object') {
+      return res.status(500).json({ 
+        error: 'Invalid response from OCR service',
+        details: 'Received non-JSON response'
+      });
+    }
+    
+    if (ocrResult.IsErroredOnProcessing) {
+      return res.status(422).json({ 
+        error: 'OCR processing error',
+        details: ocrResult.ErrorMessage || 'Failed to process image'
+      });
+    }
+    
+    if (!ocrResult.ParsedResults || ocrResult.ParsedResults.length === 0) {
+      return res.status(422).json({ 
+        error: 'No text found in image',
+        details: 'Please ensure the image contains clear, readable text'
+      });
     }
     
     const extractedText = ocrResult.ParsedResults[0]?.ParsedText || '';
+    
+    if (!extractedText.trim()) {
+      return res.status(422).json({ 
+        error: 'No readable text extracted',
+        details: 'Please try with a clearer image'
+      });
+    }
     
     // Parse the bill using advanced logic
     const parsedBill = parseBillText(extractedText);
@@ -143,21 +204,35 @@ app.post('/api/ocr', async (req, res) => {
     console.error('OCR Error:', error);
     console.error('Error details:', {
       message: error.message,
-      stack: error.stack
+      stack: error.stack,
+      name: error.name
     });
+    
+    // Return appropriate error based on error type
+    if (error.message && error.message.includes('Unexpected token')) {
+      return res.status(502).json({ 
+        error: 'OCR service returned invalid response. Please try again.',
+        details: 'Service communication error'
+      });
+    }
+    
     res.status(500).json({ 
       error: 'OCR processing failed', 
-      details: error.message 
+      details: process.env.NODE_ENV === 'development' ? error.message : 'Internal server error'
     });
   }
 });
 
 // Fallback to index for any SPA-style deep links if needed
-app.get('*', (req, res) => {
+app.get('*', (_, res) => {
   res.sendFile(path.join(__dirname, 'public', 'index.html'));
 });
 
 const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => {
-  console.log(`Rattehin running on http://localhost:${PORT}`);
+const HOST = '0.0.0.0'; // Allow connections from any IP
+app.listen(PORT, HOST, () => {
+  console.log(`🧾 Rattehin server running on:`);
+  console.log(`   • Local:   http://localhost:${PORT}`);
+  console.log(`   • Network: http://10.9.22.129:${PORT}`);
+  console.log(`\n📱 For mobile testing, use: http://10.9.22.129:${PORT}`);
 });

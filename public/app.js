@@ -514,16 +514,23 @@
       if (!response.ok) {
         let errorMessage = `OCR service error (${response.status})`;
         
+        // Clone response first so we can read it multiple ways if needed
+        const responseClone = response.clone();
+        
         try {
           const errorResult = await response.json();
           errorMessage = errorResult.error || errorResult.details || errorMessage;
         } catch (jsonError) {
-          // If response is not JSON, it might be an HTML error page
-          const textResponse = await response.text();
-          if (textResponse.includes('<html') || textResponse.includes('<!DOCTYPE')) {
-            errorMessage = 'OCR service temporarily unavailable. Please try again in a moment.';
-          } else {
-            errorMessage = 'Unable to connect to OCR service. Please check your internet connection.';
+          try {
+            // Use the cloned response to read as text since JSON parsing failed
+            const textResponse = await responseClone.text();
+            if (textResponse.includes('<html') || textResponse.includes('<!DOCTYPE')) {
+              errorMessage = 'OCR service temporarily unavailable. Please try again in a moment.';
+            } else {
+              errorMessage = 'Unable to connect to OCR service. Please check your internet connection.';
+            }
+          } catch (textError) {
+            errorMessage = 'Network error. Please check your internet connection.';
           }
         }
         

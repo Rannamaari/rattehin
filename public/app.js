@@ -1039,9 +1039,10 @@
         
         if (name && price) {
           // Add directly to shared items
-          const id = `shared_${Date.now()}_${Math.random().toString(36).slice(2, 11)}`;
-          sharedItems.push({ id, name, price });
+          const newId = `shared_${Date.now()}_${Math.random().toString(36).slice(2, 11)}`;
+          shared.push({ id: newId, name, price });
           renderShared();
+          saveToURL();
           showToast(`Added ${name} to shared items!`, 'success');
           
           // Add animation feedback

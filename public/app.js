@@ -1010,6 +1010,7 @@
     renderShared();
     renderHistory();
     updateCopyrightYear();
+    initPresetButtons();
     
     // Register service worker for PWA
     if ('serviceWorker' in navigator) {
@@ -1025,6 +1026,52 @@
         localStorage.setItem('rattehin_visited', 'true');
       }, 1000);
     }
+  }
+  
+  // Initialize preset buttons
+  function initPresetButtons() {
+    // Shared item preset buttons
+    document.querySelectorAll('.shared-preset').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        e.preventDefault();
+        const name = btn.dataset.name;
+        const price = parseFloat(btn.dataset.price);
+        
+        if (name && price) {
+          // Add directly to shared items
+          const id = `shared_${Date.now()}_${Math.random().toString(36).slice(2, 11)}`;
+          sharedItems.push({ id, name, price });
+          renderShared();
+          showToast(`Added ${name} to shared items!`, 'success');
+          
+          // Add animation feedback
+          btn.classList.add('animate-bounce-gentle');
+          setTimeout(() => btn.classList.remove('animate-bounce-gentle'), 800);
+        }
+      });
+    });
+    
+    // Individual item preset buttons  
+    document.querySelectorAll('.item-preset').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        e.preventDefault();
+        const name = btn.dataset.name;
+        const price = parseFloat(btn.dataset.price);
+        
+        if (name && price) {
+          // Fill the form inputs
+          itemNameInput.value = name;
+          itemPriceInput.value = price;
+          // Focus on the form so user can see it's filled
+          itemNameInput.focus();
+          showToast(`${name} ready to add - assign to someone!`, 'info');
+          
+          // Add animation feedback
+          btn.classList.add('animate-bounce-gentle');
+          setTimeout(() => btn.classList.remove('animate-bounce-gentle'), 800);
+        }
+      });
+    });
   }
   
   // Update copyright year dynamically

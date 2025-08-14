@@ -1041,13 +1041,13 @@
         const price = parseFloat(btn.dataset.price);
         
         if (name && price) {
-          console.log('Adding shared item:', name, price);
-          // Add directly to shared items
-          const newId = `shared_${Date.now()}_${Math.random().toString(36).slice(2, 11)}`;
-          shared.push({ id: newId, name, price });
-          renderShared();
-          saveToURL();
-          showToast(`Added ${name} to shared items!`, 'success');
+          console.log('Filling shared form with:', name, price);
+          // Fill the form inputs (same as individual items)
+          sharedNameEl.value = name;
+          sharedPriceEl.value = price;
+          // Focus on the form so user can see it's filled
+          sharedNameEl.focus();
+          showToast(`${name} ready to add - adjust price if needed!`, 'info');
           
           // Add animation feedback
           btn.classList.add('animate-bounce-gentle');

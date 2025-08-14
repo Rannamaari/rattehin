@@ -243,9 +243,6 @@
         background: linear-gradient(135deg, #f59e0b, #ea580c);
       }
       
-      .shared-preset[data-name="Paan"] {
-        background: linear-gradient(135deg, #10b981, #14b8a6);
-      }
       
       .item-preset[data-name="Burger"] {
         background: linear-gradient(135deg, #ef4444, #ec4899);
@@ -743,21 +740,18 @@
             <span class="text-xl text-white">🍽️</span>
           </div>
           <h2 class="text-xl font-bold text-gray-800 dark:text-white">
-            Shared Items (e.g., Water, Paan)
+            Shared Items (e.g., Water, Nuts)
           </h2>
         </div>
         <!-- Quick Add Shared Items -->
         <div class="mb-4">
-          <span class="block text-sm font-medium text-gray-600 dark:text-gray-400 mb-2">Quick add:</span>
-          <div class="preset-grid shared-grid">
+          <span class="block text-sm font-medium text-gray-600 dark:text-gray-400 mb-2">Common items:</span>
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
             <button class="shared-preset w-full px-4 py-3 rounded-xl bg-gradient-to-r from-blue-500 to-cyan-500 text-white font-semibold hover:from-blue-600 hover:to-cyan-600 transition-all duration-300 shadow-md hover:shadow-lg active:scale-95" data-name="Water" data-price="25">
               💧 Water (25 MVR)
             </button>
             <button class="shared-preset w-full px-4 py-3 rounded-xl bg-gradient-to-r from-amber-500 to-orange-500 text-white font-semibold hover:from-amber-600 hover:to-orange-600 transition-all duration-300 shadow-md hover:shadow-lg active:scale-95" data-name="Nuts" data-price="15">
               🥜 Nuts (15 MVR)
-            </button>
-            <button class="shared-preset w-full px-4 py-3 rounded-xl bg-gradient-to-r from-emerald-500 to-teal-500 text-white font-semibold hover:from-emerald-600 hover:to-teal-600 transition-all duration-300 shadow-md hover:shadow-lg active:scale-95" data-name="Paan" data-price="10">
-              🌿 Paan (10 MVR)
             </button>
           </div>
         </div>
@@ -1122,6 +1116,6 @@
       </div>
     </footer>
 
-    <script src="./app.js?v=7" defer></script>
+    <script src="./app.js?v=8" defer></script>
   </body>
 </html>

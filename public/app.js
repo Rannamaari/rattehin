@@ -484,8 +484,8 @@
       
       // Update progress UI
       ocrProgressBar.style.width = '20%';
-      if (imageFile.size > 2 * 1024 * 1024) {
-        ocrStatus.textContent = 'Compressing large image...';
+      if (imageFile.size > 800 * 1024) {
+        ocrStatus.textContent = 'Compressing for OCR (max 1MB)...';
       } else {
         ocrStatus.textContent = 'Converting image...';
       }
@@ -575,8 +575,8 @@
   // Helper function to convert file to base64 with compression
   function fileToBase64(file) {
     return new Promise((resolve, reject) => {
-      // Check file size - if > 2MB, compress it
-      const maxSize = 2 * 1024 * 1024; // 2MB
+      // Check file size - OCR.Space limit is 1MB, so target 800KB to be safe
+      const maxSize = 800 * 1024; // 800KB
       
       if (file.size <= maxSize) {
         // Small file, no compression needed
@@ -603,7 +603,7 @@
       img.onload = function() {
         // Calculate new dimensions maintaining aspect ratio
         let { width, height } = img;
-        const maxDimension = 1920; // Max width/height
+        const maxDimension = 1280; // Max width/height (reduced for OCR)
         
         if (width > maxDimension || height > maxDimension) {
           if (width > height) {

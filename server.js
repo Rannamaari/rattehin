@@ -116,25 +116,22 @@ app.post('/api/ocr', async (req, res) => {
     const imageSizeMB = (imageData.length * 3/4) / (1024 * 1024); // Approximate decoded size
     console.log(`Image size: ${imageSizeMB.toFixed(1)}MB`);
     
-    if (imageSizeMB > 10) {
+    if (imageSizeMB > 1) {
       return res.status(413).json({ 
-        error: 'Image too large. Please compress or resize your image to under 10MB.',
+        error: 'Image too large for OCR. Please use a smaller image (max 1MB).',
         details: `Current size: ${imageSizeMB.toFixed(1)}MB`
       });
     }
     
     console.log('Calling OCR.Space API...');
+    console.log('Using API Key:', process.env.OCR_SPACE_API_KEY ? 'Key present' : 'Key missing');
     
     // OCR.Space API call with environment variable and enhanced error handling
     let ocrResult;
     try {
       ocrResult = await ocrSpace(imageData, {
         apiKey: process.env.OCR_SPACE_API_KEY,
-        ocrEngine: 2, // Better for structured documents
-        isTable: true, // Optimized for receipts/tables
-        language: 'eng',
-        scale: true, // Auto-scale for better OCR
-        detectOrientation: true // Auto-detect text orientation
+        language: 'eng'
       });
     } catch (apiError) {
       console.error('OCR.Space API Error:', apiError);
@@ -155,6 +152,7 @@ app.post('/api/ocr', async (req, res) => {
     
     console.log('OCR Result type:', typeof ocrResult);
     console.log('OCR Result keys:', Object.keys(ocrResult || {}));
+    console.log('OCR Full Result:', JSON.stringify(ocrResult, null, 2));
     
     // Enhanced validation of OCR response
     if (!ocrResult || typeof ocrResult !== 'object') {
